@@ -105,7 +105,6 @@ const App = ({ signOut }) => {
         query: createFoodItemMutation,
         variables: { input: data },
       });
-      event.target.reset();
     } catch (error) {
       console.log("Error creating food item:", error);
     }
