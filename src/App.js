@@ -5,6 +5,7 @@ import { listNotes } from "./graphql/queries";
 import {
   createNote as createNoteMutation,
   deleteNote as deleteNoteMutation,
+  createFoodItemMutation as createFoodItemMutation,
 } from "./graphql/mutations";
 import { API, Storage } from "aws-amplify";
 import {
@@ -39,6 +40,39 @@ const App = ({ signOut }) => {
     setNotes(notesFromAPI);
   }
 
+  async function AddFoodItem() {
+    const [name, setName] = useState("");
+    const [description, setDescription] = useState("");
+    const [price, setPrice] = useState(0);
+    const [imageFile, setImageFile] = useState(null);
+
+    const handleNameChange = (e) => setName(e.target.value);
+    const handleDescriptionChange = (e) => setDescription(e.target.value);
+    const handlePriceChange = (e) => setPrice(e.target.value);
+    const handleImageChange = (e) => setImageFile(e.target.files[0]);
+
+    const handleSubmit = async (e) => {
+      e.preventDefault();
+      const filename = `${Date.now()}-${imageFile.name}`;
+      const imageLocation = await Storage.put(filename, imageFile, {
+        contentType: imageFile.type,
+      });
+      // make a request to your API to add the food item to the database
+      // include the name, description, price, and imageLocation in the request body
+    };
+  }
+
+  async function deleteNote({ id, name }) {
+    const newNotes = notes.filter((note) => note.id !== id);
+    setNotes(newNotes);
+    await Storage.remove(name);
+    await API.graphql({
+      query: deleteNoteMutation,
+      variables: { input: { id } },
+    });
+  }
+  const [foodItems, setFoodItems] = React.useState([]);
+
   async function createNote(event) {
     event.preventDefault();
     const form = new FormData(event.target);
@@ -56,67 +90,77 @@ const App = ({ signOut }) => {
     fetchNotes();
     event.target.reset();
   }
-  async function deleteNote({ id, name }) {
-    const newNotes = notes.filter((note) => note.id !== id);
-    setNotes(newNotes);
-    await Storage.remove(name);
-    await API.graphql({
-      query: deleteNoteMutation,
-      variables: { input: { id } },
-    });
+  async function addFoodItem(name, description, price, imageFile) {
+    try {
+      // Upload image to S3
+      const imageKey = await Storage.put(name, imageFile);
+      // Create new food item
+      const data = {
+        name: name,
+        description: description,
+        price: price,
+        image: imageKey,
+      };
+      await API.graphql({
+        query: createFoodItemMutation,
+        variables: { input: data },
+      });
+    } catch (error) {
+      console.log("Error creating food item:", error);
+    }
   }
+
   return (
     <View className="App">
-      <Heading level={1}>My Notes App</Heading>
-      <View as="form" margin="3rem 0" onSubmit={createNote}>
-        <Flex direction="row" justifyContent="center">
-          <TextField
-            name="name"
-            placeholder="Note Name"
-            label="Note Name"
-            labelHidden
-            variation="quiet"
-            required
-          />
-          <TextField
-            name="description"
-            placeholder="Note Description"
-            label="Note Description"
-            labelHidden
-            variation="quiet"
-            required
-          />
-          <Button type="submit" variation="primary">
-            Create Note
-          </Button>
-        </Flex>
-      </View>
-      <Heading level={2}>Current Notes</Heading>
-      <View margin="3rem 0">
-        {notes.map((note) => (
-          <Flex
-            key={note.id || note.name}
-            direction="row"
-            justifyContent="center"
-            alignItems="center"
-          >
-            <Text as="strong" fontWeight={700}>
-              {note.name}
-            </Text>
-            <Text as="span">{note.description}</Text>
-            {note.image && (
-              <Image
-                src={note.image}
-                alt={`visual aid for ${notes.name}`}
-                style={{ width: 400 }}
-              />
-            )}
-            <Button variation="link" onClick={() => deleteNote(note)}>
-              Delete note
-            </Button>
-          </Flex>
-        ))}
-      </View>
+      <Heading level={1}>Shopping List</Heading>
+      <div>
+        <h2>Add Food Item</h2>
+        <form
+          onSubmit={(event) => {
+            event.preventDefault();
+            const name = event.target.name.value;
+            const description = event.target.description.value;
+            const price = parseFloat(event.target.price.value);
+            const imageFile = event.target.image.files[0];
+            addFoodItem(name, description, price, imageFile);
+          }}
+        >
+          <div>
+            <label htmlFor="name">Name:</label>
+            <input type="text" id="name" name="name" />
+          </div>
+          <div>
+            <label htmlFor="description">Description:</label>
+            <input type="text" id="description" name="description" />
+          </div>
+          <div>
+            <label htmlFor="price">Price:</label>
+            <input type="number" id="price" name="price" step="0.01" />
+          </div>
+          <div>
+            <label htmlFor="image">Image:</label>
+            <input type="file" id="image" name="image" accept="image/*" />
+          </div>
+          <button type="submit">Add Food Item</button>
+        </form>
+      </div>
+      <div>
+        <h2>Food Items</h2>
+        <ul>
+          {foodItems.map((foodItem) => (
+            <li key={foodItem.id}>
+              <div>
+                <img src={foodItem.image} alt={foodItem.name} />
+              </div>
+              <div>
+                <h3>{foodItem.name}</h3>
+                <p>{foodItem.description}</p>
+                <p>${foodItem.price.toFixed(2)}</p>
+              </div>
+            </li>
+          ))}
+        </ul>
+      </div>
       <Button onClick={signOut}>Sign Out</Button>
       <View name="image" as="input" type="file" style={{ alignSelf: "end" }} />
     </View>

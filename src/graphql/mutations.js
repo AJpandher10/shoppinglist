@@ -16,6 +16,22 @@ export const createNote = /* GraphQL */ `
     }
   }
 `;
+
+export const createFoodItemMutation = `
+  mutation CreateFoodItem($input: CreateFoodItemInput!
+    $condition: ModelNoteConditionInput
+
+    ) {
+    
+    createFoodItem(input: $input) {
+      id
+      name
+      description
+      price
+      image
+    }
+  }
+`;
 export const updateNote = /* GraphQL */ `
   mutation UpdateNote(
     $input: UpdateNoteInput!
