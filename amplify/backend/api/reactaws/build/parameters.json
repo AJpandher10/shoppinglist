@@ -1,0 +1,7 @@
+{
+    "AppSyncApiName": "reactaws",
+    "DynamoDBBillingMode": "PAY_PER_REQUEST",
+    "DynamoDBEnableServerSideEncryption": false,
+    "S3DeploymentBucket": "amplify-amplify9b69574d170b4-staging-201927-deployment",
+    "S3DeploymentRootKey": "amplify-appsync-files/2c2d52bb7958c58276a26fbc07889064321f4d14"
+}

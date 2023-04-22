@@ -1,0 +1,12 @@
+{
+  "resourceName": "navkaml",
+  "policyUUID": "26bce40a",
+  "bucketName": "navkamal",
+  "storageAccess": "auth",
+  "guestAccess": [],
+  "authAccess": [
+    "READ"
+  ],
+  "triggerFunction": "NONE",
+  "groupAccess": {}
+}
